@@ -12,7 +12,7 @@
 #include <dirent.h>
 #include <string.h>
 
-#define keyword "landy"
+#define keyword "h00k"
 
 extern char **environ;
 
