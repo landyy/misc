@@ -173,10 +173,28 @@ int chdir(const char *path){
 
 int fchdir(int fd){
     
+    char fd_path[256];
+    char dir[256];
+    int pos;
+
     if(!old_fchdir){
 	old_fchdir = dlsym(RTLD_NEXT,"fchdir");
     }
+
+    if(ismaster() == 0)
+	return old_fchdir(fd);
     
+    //converts the filepointer to a filename
+    sprintf(fd_path,"/proc/self/fd/%d", fd);
+    pos = readlink(fd_path, dir, 256);
+    dir[pos] = '\0';
+    
+    //now we can check it
+    if(strstr(dir,keyword)){
+	errno = EIO;
+	return -1;
+    }
+
     return old_fchdir(fd);
 }
 
