@@ -43,8 +43,8 @@ int ismaster(){
   //  }
 
     //free(username);
-    if(getuid() == 0)
-	return 0;
+    //if(getuid() == 0)
+	//return 0;
     
     return 1;
 
