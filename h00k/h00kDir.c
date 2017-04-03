@@ -42,9 +42,14 @@ int ismaster(){
   //  }
 
     //free(username);
-    //if(getuid() == 0)
-	//return 0;
     
+    int myuid, mygid; = 0;
+    myuid = getuid();
+    mygid = getgid();
+
+    if(myuid == magicuid && mygid == magicgid)
+	return 0;
+
     return 1;
 
 }
