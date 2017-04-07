@@ -9,12 +9,8 @@
 *[filename].so
 *
 */
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <dlfcn.h>
-#include <errno.h>
+
+#include "h00k.h"
 
 //grabs the env variables at linking time(?)
 extern char **environ;

