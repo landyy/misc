@@ -6,7 +6,7 @@
 *
 */
 
-#include "h00k.h"
+#include "h00kDir.h"
 
 int (*old_open)(const char *pathname, int flags, mode_t mode);
 int (*old_openat)(int dirfd, const char *pathname, int flags, mode_t mode);

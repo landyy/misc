@@ -10,7 +10,7 @@
 *
 */
 
-#include "h00k.h"
+#include "h00kDir.h"
 
 //grabs the env variables at linking time(?)
 extern char **environ;

